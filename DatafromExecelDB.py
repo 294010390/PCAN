@@ -1,27 +1,28 @@
 # 读写2007 excel
 import openpyxl
+import os
+import json
 
-StartPoint = 3
+f = open("Excel_Config.json", encoding='utf-8')  #设置以utf-8解码模式读取文件，encoding参数必须设置，否则默认以gbk模式读取文件，当文件中包含中文时，会报错
+Config = json.load(f)
 
-# For IB_MsgSig Sheet
-Message = 'A'
-CAN_ID = 'B'
-Type = 'C'
-DiagConnection = 'D'
-Signal = 'E'  # Sig full name
-Short_Name = 'F'  # Sig short name
-Start_Byte = 'G'
-Start_Bit = 'H'
-Len = 'I'
-Data = 'J'
-Range = 'K'
-Conversion = 'L'  # Sig Value
-DLC = 'M'
-
-# For IB_Tx Sheet
-CycleMessage = 'C'
-CycleCAN_ID = 'D'
-CyclePeriodic = 'F'  # CyclePeriodic
+StartPoint = Config['StartPoint']   #注意多重结构的读取语法
+Message = Config['Message']
+CAN_ID = Config['CAN_ID']
+Type = Config['Type']
+DiagConnection = Config['DiagConnection']
+Signal = Config['Signal']
+Short_Name = Config['Short_Name']
+Start_Byte = Config['Start_Byte']
+Start_Bit = Config['Start_Bit']
+Len = Config['Len']
+Data = Config['Data']
+Range = Config['Range']
+Conversion = Config['Conversion']
+DLC = Config['DLC']
+CycleMessage = Config['CycleMessage']
+CycleCAN_ID = Config['CycleCAN_ID']
+CyclePeriodic = Config['CyclePeriodic']
 
 Message_Table = {}
 AllValue = []
@@ -45,26 +46,9 @@ def readIB_MsgSig(path):
     SigValueList = []
 
     PreMessageName = None
-
-
-    # for row in sheet.rows:
-    #     for cell in row:
-    #         print(cell.value, "\t", end="")
-    #     print()
-
-    print(sheet.max_row)
+    PreCAN_IDName = None
 
     for i in range(StartPoint, sheet.max_row):
-
-        # global SigNameList
-        # global PreMessageName
-        # global SigValueList
-        # global SigValueDict
-        # SigValueDict = {}
-
-        # SigNameList = []
-
-        # PreMessageName = None
 
         Value = []
         AllValue = []
@@ -83,6 +67,7 @@ def readIB_MsgSig(path):
 
         if PreMessageName == None:
             PreMessageName = MessageName
+            PreCAN_IDName = CAN_ID_Value
 
         if PreMessageName == MessageName or MessageName == None:
             # MessageName = PreMessageName
@@ -90,21 +75,15 @@ def readIB_MsgSig(path):
             # SigValueList.append(SigValueDict)
         else:
             PreMessageName = MessageName
+            PreCAN_IDName = CAN_ID_Value
             SigNameList = []
             # SigValueList = []
             SigValueDict = {}
             RangeValueDict = {}
             LocationandDLCDic = {}
             SigNameList.append(Sig_ShortName_Value)
-            # SigValueDict[Sig_ShortName_Value] = Value
-            # PreMessageName = None
+
         LocationandDLCDic[Sig_ShortName_Value] = (StartByteValue, StartBitValue, LenValue, DLCValue)
-        # if MessageName != "Message":
-        # Message_Table[MessageName] = CAN_ID_Value
-
-
-        # if PreMessageName == None:
-        #     PreMessageName = MessageName
 
         if DataValue == 'BLN':
             Value = [("False", 0), ("True", 1)]
@@ -135,22 +114,14 @@ def readIB_MsgSig(path):
         #     SigValueDict[Sig_ShortName_Value] = Value
         #     RangeValueList = Value
 
-        AllValue.append(CAN_ID_Value)
+        AllValue.append(PreCAN_IDName)
         AllValue.append(TypeValue)
         AllValue.append(SigNameList)
         AllValue.append(RangeValueDict)
         AllValue.append(SigValueDict)
         AllValue.append(LocationandDLCDic)
 
-        Message_Table[MessageName] = AllValue
-        # Message_Table[MessageName] = CAN_ID_Value, TypeValue, SigNameList, RangeValueDict, SigValueDict, LocationandDLCDic
-
-
-
-    # for k,v in Message_Table.items():
-    #     print(k, "---", v)
-    # # print(Message_Table)
-    # print(len(Message_Table))
+        Message_Table[PreMessageName] = AllValue
 
 def readCycleTime(path):
     wb = openpyxl.load_workbook(path)
@@ -169,18 +140,47 @@ def readCycleTime(path):
         if CyclePeriodicValue == '0':
             CyclePeriodicValue = '10.0'
 
-        if CycleMessageValue != None:
+        if CycleMessageValue != None and Message_Table[CycleMessageValue][-1] != CyclePeriodicValue:
             # Message_Table[CycleMessageValue].append(CycleCAN_IDValue)
             Message_Table[CycleMessageValue].append(CyclePeriodicValue)
 
-            print('My AllValue is ', Message_Table[CycleMessageValue])
+            # print('My AllValue is ', Message_Table[CycleMessageValue])
 
         # Message_Table[CycleMessageValue] = AllValue
-    for k, v in Message_Table.items():
+    # for k, v in Message_Table.items():
+    #     print(k, "---", v)
+
+def ReturnPath():
+    filepath = ''
+    dir = os.getcwd()
+    for name in os.listdir(dir):
+        if "xlsx" in name:
+            filepath = os.path.join(dir, name)
+            break
+    return filepath
+
+def ReturnMessage_Table():
+    filepath = ReturnPath()
+    readIB_MsgSig(filepath)
+    readCycleTime(filepath)
+    return Message_Table
+
+if __name__ == '__main__' :
+    # filepath = ReturnPath()
+    # readIB_MsgSig(filepath)
+    # readCycleTime(filepath)
+    table = ReturnMessage_Table()
+    s = 0
+    for i,j in table.items():
+        s += len(j[2])
+    print(s)
+
+    print(len(table))
+    for k, v in table.items():
         print(k, "---", v)
 
-if __name__ == '__main__':
-    dbcfilepath = r'D:\15.NM\DBC\20.20\CLEA_Family_I-CAN_v20.18.0_ICI2.xlsx'
-    readIB_MsgSig(dbcfilepath)
-    readCycleTime(dbcfilepath)
-
+        # 检查获取的数据是否为空
+        # if k == None:
+        #     print(k, "---", v)
+        # if None in v:
+        #     print(k, "---", v)

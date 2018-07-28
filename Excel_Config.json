@@ -1,0 +1,24 @@
+{
+	"_Comment0" : "Valid Data start point of IB_MsgSig" ,
+	"StartPoint" : 3,
+
+	"_Comment1" : "Data of IB_MsgSig" ,
+	"Message" : "A",
+	"CAN_ID" : "B",
+	"Type" : "C",
+	"DiagConnection" : "D",
+	"Signal" : "E"  ,
+	"Short_Name" : "F" ,
+	"Start_Byte" : "G" ,
+	"Start_Bit" : "H" ,
+	"Len" : "I" ,
+	"Data" : "J" ,
+	"Range" : "K" ,
+	"Conversion" : "L" ,
+	"DLC" : "M" ,
+
+	"_Comment2" : "Data of IB_Tx" ,
+	"CycleMessage" : "C" ,
+	"CycleCAN_ID" : "D" ,
+	"CyclePeriodic" : "F"  
+}
